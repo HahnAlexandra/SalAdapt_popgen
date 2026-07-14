@@ -1509,7 +1509,8 @@ library(data.table)
 library(ggnewscale)
 library(ggpubr)
 library(geodist)
-library(marmap)</code></pre>
+library(marmap)
+library(geosphere)</code></pre>
 <p>load data</p>
 <pre class="r"><code>world &lt;- ne_countries(scale = &quot;medium&quot;, returnclass = &quot;sf&quot;)
 
@@ -2024,6 +2025,48 @@ lapply(r_df_days, function(x){ length(which(x==0))})</code></pre>
 #1353 for contemporary mean
 #810 for RCP85 adaptive
 #3496 for RCP85 mean
+
+# check resolution of grid
+x_res &lt;- unique(diff(sort(unique(r_df_days$x))))[1]  # longitude step
+y_res &lt;- unique(diff(sort(unique(r_df_days$y))))[1]  # latitude step
+
+cat(&quot;x resolution:&quot;, x_res, &quot;degrees\n&quot;)</code></pre>
+<pre><code>## x resolution: 0.08333334 degrees</code></pre>
+<pre class="r"><code>cat(&quot;y resolution:&quot;, y_res, &quot;degrees\n&quot;)</code></pre>
+<pre><code>## y resolution: 0.08333335 degrees</code></pre>
+<pre class="r"><code># calculate area for each grid cell
+r_df_days &lt;- r_df_days %&gt;%
+  mutate(
+    # area of each grid cell in km²
+    cell_area_km2 = distHaversine(
+      cbind(x - x_res/2, y),
+      cbind(x + x_res/2, y)
+    ) / 1000 *  # longitude width in km
+      distHaversine(
+        cbind(x, y - y_res/2),
+        cbind(x, y + y_res/2)
+      ) / 1000    # latitude height in km
+  )
+
+survival_cols &lt;- c(&quot;survival_so&quot;, &quot;survival_adj_95&quot;, 
+                   &quot;survival_so_fb&quot;, &quot;survival_adj_95fb&quot;)
+
+unviable_area &lt;- r_df_days %&gt;%
+  summarise(across(
+    all_of(survival_cols),
+    ~ sum(cell_area_km2[. == 0], na.rm = TRUE),
+    .names = &quot;unviable_km2_{.col}&quot;
+  ))
+
+unviable_area #in km2</code></pre>
+<pre><code>##   unviable_km2_survival_so unviable_km2_survival_adj_95
+## 1                 52014.08                     141435.5
+##   unviable_km2_survival_so_fb unviable_km2_survival_adj_95fb
+## 1                    86.27247                        29768.7</code></pre>
+<pre class="r"><code>#86.3 for contemporary adaptive
+#52,014.1 for contemporary mean
+#29,768.7 for RCP85 adaptive
+#141,435.5 for RCP85 mean
 
 
 # plot in map
