@@ -1987,7 +1987,7 @@ grenedalf sync \
   --filter-total-only-biallelic-snps \
   --filter-total-snp-min-frequency 0.05 \
   --reference-genome-fasta $WORK/popgen/reference_genome/acar2_round_2_trimmed.fasta \
-  --file-suffix _noc_min40_MAF005_MAC4 \
+  --file-suffix _gea_min40_MAF005_MAC4 \
   --allow-file-overwriting \
   --out-dir /gxfs_work/geomar/smomw629/popgen/data/05.Grenedalf_results</code></pre>
 <p>Filter out all missing/excluded loci</p>
@@ -5414,7 +5414,16 @@ upset(fromList(SNP_sets),
         set_size_tick           = 1.5,   # x-axis tick labels left bar
         set_names               = 1.5,   # set name labels
         numbers_above_bars      = 2    # counts above bars
-      ))</code></pre>
+      ))
+
+upset_matrix &lt;- as.data.frame(fromList(SNP_sets))
+rownames(upset_matrix) &lt;- unique(unlist(SNP_sets))
+
+res &lt;- supertest(SNP_sets, n = 22744641)#use liberal SNP estimate
+summary(res)
+
+sum_res &lt;- summary(res)
+tab &lt;- sum_res$Table</code></pre>
 </div>
 </div>
 <div id="enrichment" class="section level1">
